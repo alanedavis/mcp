@@ -18,31 +18,16 @@ name = "marketing-connect-mcp-services"
 version = "1.0.0"
 description = "Marketing Connect MCP Server - AI integration services"
 readme = "README.md"
-license = { text = "MIT" }
 requires-python = ">=3.11"
-authors = [
-    { name = "JPMC", email = "REPLACE_ME@restricted.chase.com" }
-]
-keywords = ["mcp", "anthropic", "ai", "llm", "claude", "marketing"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-]
 
 # -----------------------------------------------------------------------------
 # CORE DEPENDENCIES
 # -----------------------------------------------------------------------------
 dependencies = [
-    "mcp>=1.0.0",                # Official MCP SDK from Anthropic
-    "uvicorn>=0.29.0",           # ASGI server for HTTP transport
+    "fastmcp>=2.0.0",            # FastMCP SDK (includes mcp)
     "pydantic>=2.0.0",           # Data validation
-    "pydantic-settings>=2.0.0", # Settings management from env vars
-    "starlette>=0.37.0",        # For health check endpoints
+    "pydantic-settings>=2.0.0",  # Settings management from env vars
+    "starlette>=0.37.0",         # For custom route responses
 ]
 
 # -----------------------------------------------------------------------------
@@ -132,7 +117,7 @@ warn_return_any = true
 warn_unused_ignores = true
 
 [[tool.mypy.overrides]]
-module = ["mcp.*"]
+module = ["mcp.*", "fastmcp.*"]
 ignore_missing_imports = true
 
 # -----------------------------------------------------------------------------

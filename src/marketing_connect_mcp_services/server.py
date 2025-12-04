@@ -35,7 +35,7 @@ MCP CONCEPTS:
 - PROMPTS: Reusable interaction templates
 """
 
-from mcp.server.fastmcp import FastMCP
+from fastmcp import FastMCP
 
 from marketing_connect_mcp_services.config import settings
 
