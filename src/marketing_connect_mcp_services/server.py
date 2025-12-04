@@ -48,8 +48,7 @@ from marketing_connect_mcp_services.config import settings
 
 mcp = FastMCP(
     name=settings.server_name,
-    version=settings.server_version,
-    description="Marketing Connect MCP Server for AI integrations",
+    instructions="Marketing Connect MCP Server for AI integrations",
 )
 
 
@@ -83,44 +82,10 @@ def _register_components() -> None:
 
 
 # =============================================================================
-# LIFECYCLE HOOKS
+# COMPONENT REGISTRATION
 # =============================================================================
-
-@mcp.on_event("startup")
-async def on_startup() -> None:
-    """
-    Called when the MCP server starts.
-
-    Use this for:
-    - Initializing database connections
-    - Validating configuration
-    - Loading cached data
-    """
-    print(f"Starting {settings.server_name} v{settings.server_version}...")
-    print(f"   Debug mode: {settings.debug}")
-
-    # Register all components
-    _register_components()
-
-    # List registered tools for debugging
-    if settings.debug:
-        # Access the low-level server to list tools
-        print("   Registered tools:")
-        for tool in mcp._tool_manager._tools.values():
-            print(f"      - {tool.name}: {tool.description[:50]}...")
-
-
-@mcp.on_event("shutdown")
-async def on_shutdown() -> None:
-    """
-    Called when the MCP server stops.
-
-    Use this for:
-    - Closing database connections
-    - Flushing caches
-    - Cleanup operations
-    """
-    print(f"{settings.server_name} shutting down...")
+# Register all components at module load time
+_register_components()
 
 
 # =============================================================================

@@ -57,7 +57,7 @@ def create_health_app():
 
     # Get the FastMCP instance and its HTTP app
     server = get_server()
-    mcp_app = server.http_app()
+    mcp_app = server.streamable_http_app()
 
     async def health_check(request):
         """
