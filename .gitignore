@@ -1,0 +1,40 @@
+
+# IDE
+.idea/
+*.iml
+
+#eclipse-generated
+.settings/
+.classpath
+.project
+
+#terraform
+.terraform
+
+# Environments
+.venv
+
+# Packaging Artifacts
+dist/
+ssap_bill_of_materials/
+requirements.txt
+
+# Test Artifacts
+.coverage
+reports/
+.pytest_cache/
+__pycache__/
+*.pyc
+.cache
+
+# VS Code files for those working on multiple tools
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+

@@ -1,0 +1,150 @@
+# =============================================================================
+# pyproject.toml - Marketing Connect MCP Services
+# =============================================================================
+# A Model Context Protocol (MCP) server for Marketing Connect
+#
+# Uses Hatchling for builds and uv for fast dependency management
+# =============================================================================
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# -----------------------------------------------------------------------------
+# PROJECT METADATA (PEP 621)
+# -----------------------------------------------------------------------------
+[project]
+name = "marketing-connect-mcp-services"
+version = "1.0.0"
+description = "Marketing Connect MCP Server - AI integration services"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [
+    { name = "JPMC", email = "REPLACE_ME@restricted.chase.com" }
+]
+keywords = ["mcp", "anthropic", "ai", "llm", "claude", "marketing"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+# -----------------------------------------------------------------------------
+# CORE DEPENDENCIES
+# -----------------------------------------------------------------------------
+dependencies = [
+    "mcp>=1.0.0",                # Official MCP SDK from Anthropic
+    "uvicorn>=0.29.0",           # ASGI server for HTTP transport
+    "pydantic>=2.0.0",           # Data validation
+    "pydantic-settings>=2.0.0", # Settings management from env vars
+    "starlette>=0.37.0",        # For health check endpoints
+]
+
+# -----------------------------------------------------------------------------
+# OPTIONAL DEPENDENCIES
+# -----------------------------------------------------------------------------
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.9.9",
+    "pre-commit>=4.2.0",
+    "pre-commit-hooks>=5.0.0",
+    "mypy>=1.10.0",
+]
+test = [
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=6.1.1",
+    "coverage>=7.8.2",
+]
+# Install everything with: uv pip install -e ".[dev,test]"
+all = [
+    "marketing-connect-mcp-services[dev,test]",
+]
+
+# -----------------------------------------------------------------------------
+# ENTRY POINTS
+# -----------------------------------------------------------------------------
+[project.scripts]
+marketing-connect-mcp = "marketing_connect_mcp_services.cli:main"
+
+# -----------------------------------------------------------------------------
+# HATCH BUILD CONFIG
+# -----------------------------------------------------------------------------
+[tool.hatch.build.targets.wheel]
+packages = ["src/marketing_connect_mcp_services"]
+
+[tool.hatch.build.targets.wheel.sources]
+"src" = ""
+
+# -----------------------------------------------------------------------------
+# UV CONFIGURATION
+# -----------------------------------------------------------------------------
+# Configure uv to use JPMC artifact repository
+# Set UV_INDEX_URL environment variable or use pyproject.toml config
+[tool.uv]
+index-url = "https://artifacts-read.gkp.jpmchase.net/artifactory/api/pypi/pypi/simple"
+# Fallback to public PyPI for packages not in JPMC repo
+extra-index-url = ["https://pypi.org/simple"]
+
+# -----------------------------------------------------------------------------
+# PYTEST CONFIGURATION
+# -----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+pythonpath = ["src"]
+testpaths = ["tests"]
+junit_family = "xunit1"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = ["-ra", "-q", "--strict-markers"]
+
+# -----------------------------------------------------------------------------
+# RUFF - Linting & Formatting
+# -----------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I", "UP", "B", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["marketing_connect_mcp_services"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# -----------------------------------------------------------------------------
+# MYPY - Type Checking
+# -----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["mcp.*"]
+ignore_missing_imports = true
+
+# -----------------------------------------------------------------------------
+# COVERAGE
+# -----------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["src/marketing_connect_mcp_services"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
