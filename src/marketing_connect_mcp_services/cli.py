@@ -26,108 +26,94 @@ USAGE:
 """
 
 import argparse
-import json
 import sys
 from datetime import datetime, timezone
 from typing import NoReturn
 
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+
 from marketing_connect_mcp_services.config import settings
+from marketing_connect_mcp_services.server import mcp
 
 
 # Track server start time for uptime calculation
 _start_time: datetime | None = None
 
 
-def create_health_app():
+# =============================================================================
+# CUSTOM ROUTES (Health/Info endpoints)
+# =============================================================================
+# These are registered with FastMCP's custom_route decorator
+
+
+@mcp.custom_route("/", methods=["GET"])
+async def root_endpoint(request: Request) -> JSONResponse:
     """
-    Create an ASGI application that combines MCP endpoints with health checks.
-
-    This wraps the FastMCP HTTP app and adds:
-    - /health - Returns 200 OK with {"status": "UP"}
-    - /info - Returns server metadata
+    Root endpoint - provides quick overview.
     """
-    from starlette.applications import Starlette
-    from starlette.responses import JSONResponse
-    from starlette.routing import Mount, Route
+    return JSONResponse({
+        "service": settings.server_name,
+        "version": settings.server_version,
+        "endpoints": {
+            "mcp": "/mcp",
+            "health": "/health",
+            "info": "/info",
+        },
+        "status": "running",
+    })
 
-    from marketing_connect_mcp_services.server import get_server
 
-    global _start_time
-    _start_time = datetime.now(timezone.utc)
+@mcp.custom_route("/health", methods=["GET"])
+async def health_check(request: Request) -> JSONResponse:
+    """
+    Health check endpoint.
 
-    # Get the FastMCP instance and its HTTP app
-    server = get_server()
-    mcp_app = server.streamable_http_app()
+    Returns 200 OK if the server is running.
+    """
+    return JSONResponse({
+        "status": "UP",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    })
 
-    async def health_check(request):
-        """
-        Health check endpoint.
 
-        Returns 200 OK if the server is running.
-        """
-        return JSONResponse({
-            "status": "UP",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+@mcp.custom_route("/info", methods=["GET"])
+async def info_endpoint(request: Request) -> JSONResponse:
+    """
+    Info endpoint.
 
-    async def info_endpoint(request):
-        """
-        Info endpoint.
+    Returns server metadata for deployment verification.
+    """
+    uptime_seconds = None
+    if _start_time:
+        uptime_seconds = (datetime.now(timezone.utc) - _start_time).total_seconds()
 
-        Returns server metadata for deployment verification.
-        """
-        uptime_seconds = None
-        if _start_time:
-            uptime_seconds = (datetime.now(timezone.utc) - _start_time).total_seconds()
-
-        return JSONResponse({
-            "app": {
-                "name": settings.server_name,
-                "version": settings.server_version,
-                "description": "Marketing Connect MCP Server",
-            },
-            "server": {
-                "host": settings.host,
-                "port": settings.port,
-                "debug": settings.debug,
-                "log_level": settings.log_level,
-            },
-            "config": {
-                "base_url": settings.base_url,
-                "region": settings.region,
-            },
-            "runtime": {
-                "start_time": _start_time.isoformat() if _start_time else None,
-                "uptime_seconds": uptime_seconds,
-            },
-        })
-
-    async def root_endpoint(request):
-        """
-        Root endpoint - provides quick overview.
-        """
-        return JSONResponse({
-            "service": settings.server_name,
+    return JSONResponse({
+        "app": {
+            "name": settings.server_name,
             "version": settings.server_version,
-            "endpoints": {
-                "mcp": "/mcp",
-                "health": "/health",
-                "info": "/info",
-            },
-            "status": "running",
-        })
+            "description": "Marketing Connect MCP Server",
+        },
+        "server": {
+            "host": settings.host,
+            "port": settings.port,
+            "debug": settings.debug,
+            "log_level": settings.log_level,
+        },
+        "config": {
+            "base_url": settings.base_url,
+            "region": settings.region,
+        },
+        "runtime": {
+            "start_time": _start_time.isoformat() if _start_time else None,
+            "uptime_seconds": uptime_seconds,
+        },
+    })
 
-    # Create the combined application
-    app = Starlette(
-        routes=[
-            Route("/", root_endpoint),
-            Route("/health", health_check),
-            Route("/info", info_endpoint),
-            Mount("/mcp", app=mcp_app),
-        ],
-    )
 
-    return app
+# =============================================================================
+# SERVER RUNNER
+# =============================================================================
 
 
 def run_server(host: str, port: int) -> NoReturn:
@@ -140,24 +126,8 @@ def run_server(host: str, port: int) -> NoReturn:
               "127.0.0.1" = localhost only (not accessible externally)
         port: TCP port number (1-65535)
     """
-    # Try to import uvicorn - it's the HTTP server
-    try:
-        import uvicorn
-    except ImportError:
-        print("=" * 60)
-        print("ERROR: uvicorn is not installed")
-        print("=" * 60)
-        print()
-        print("uvicorn is the HTTP server that runs your MCP server.")
-        print("Install it with:")
-        print()
-        print("    uv add uvicorn")
-        print()
-        print("=" * 60)
-        sys.exit(1)
-
-    # Create the combined app with health endpoints
-    app = create_health_app()
+    global _start_time
+    _start_time = datetime.now(timezone.utc)
 
     # Print startup info
     print()
@@ -176,13 +146,9 @@ def run_server(host: str, port: int) -> NoReturn:
     print("=" * 60)
     print()
 
-    # Start the server - this blocks until Ctrl+C
-    uvicorn.run(
-        app,
-        host=host,
-        port=port,
-        log_level=settings.log_level.lower(),
-    )
+    # Use FastMCP's built-in run method with streamable HTTP transport
+    # Note: host/port are configured in server.py via settings
+    mcp.run(transport="streamable-http")
 
     sys.exit(0)
 

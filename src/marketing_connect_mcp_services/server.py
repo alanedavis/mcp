@@ -49,6 +49,8 @@ from marketing_connect_mcp_services.config import settings
 mcp = FastMCP(
     name=settings.server_name,
     instructions="Marketing Connect MCP Server for AI integrations",
+    host=settings.host,
+    port=settings.port,
 )
 
 
