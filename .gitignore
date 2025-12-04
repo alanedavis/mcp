@@ -14,6 +14,9 @@
 # Environments
 .venv
 
+# UV
+uv.lock
+
 # Packaging Artifacts
 dist/
 ssap_bill_of_materials/

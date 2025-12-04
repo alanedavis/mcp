@@ -26,15 +26,19 @@ USAGE:
 """
 
 import argparse
+import logging
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import NoReturn
 
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from marketing_connect_mcp_services.config import settings
+from marketing_connect_mcp_services.logging_config import setup_logging
 from marketing_connect_mcp_services.server import mcp
+
+logger = logging.getLogger(__name__)
 
 
 # Track server start time for uptime calculation
@@ -52,6 +56,7 @@ async def root_endpoint(request: Request) -> JSONResponse:
     """
     Root endpoint - provides quick overview.
     """
+    logger.debug(f"Root endpoint accessed from {request.client}")
     return JSONResponse({
         "service": settings.server_name,
         "version": settings.server_version,
@@ -71,9 +76,10 @@ async def health_check(request: Request) -> JSONResponse:
 
     Returns 200 OK if the server is running.
     """
+    logger.debug(f"Health check from {request.client}")
     return JSONResponse({
         "status": "UP",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     })
 
 
@@ -84,9 +90,10 @@ async def info_endpoint(request: Request) -> JSONResponse:
 
     Returns server metadata for deployment verification.
     """
+    logger.debug(f"Info endpoint accessed from {request.client}")
     uptime_seconds = None
     if _start_time:
-        uptime_seconds = (datetime.now(timezone.utc) - _start_time).total_seconds()
+        uptime_seconds = (datetime.now(UTC) - _start_time).total_seconds()
 
     return JSONResponse({
         "app": {
@@ -127,7 +134,13 @@ def run_server(host: str, port: int) -> NoReturn:
         port: TCP port number (1-65535)
     """
     global _start_time
-    _start_time = datetime.now(timezone.utc)
+    _start_time = datetime.now(UTC)
+
+    # Initialize logging before anything else
+    setup_logging()
+
+    logger.info(f"Starting {settings.server_name} v{settings.server_version}")
+    logger.info(f"Log level: {settings.log_level}, Debug: {settings.debug}")
 
     # Print startup info
     print()
@@ -146,10 +159,14 @@ def run_server(host: str, port: int) -> NoReturn:
     print("=" * 60)
     print()
 
+    logger.info(f"Server listening on http://{host}:{port}")
+    logger.debug(f"Configuration: base_url={settings.base_url}, region={settings.region}")
+
     # Use FastMCP's built-in run method with streamable HTTP transport
     # Note: host/port are configured in server.py via settings
     mcp.run(transport="streamable-http")
 
+    logger.info("Server shutdown complete")
     sys.exit(0)
 
 

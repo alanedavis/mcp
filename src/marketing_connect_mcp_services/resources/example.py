@@ -17,13 +17,19 @@ PATTERNS SHOWN:
 1. Static resource - always returns the same data
 2. Parameterized resource - takes URI parameters
 3. Dynamic resource - fetches data on demand
+4. Hardcoded list resource - returns a list of objects
 """
 
 import json
-from datetime import datetime, timezone
+import logging
+from datetime import UTC, datetime
+
+from pydantic import BaseModel, Field
 
 from marketing_connect_mcp_services.config import settings
 from marketing_connect_mcp_services.server import mcp
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -147,7 +153,7 @@ async def get_status() -> str:
     """
     return json.dumps({
         "status": "healthy",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "server": settings.server_name,
         "version": settings.server_version,
         "config": {
@@ -200,3 +206,90 @@ Example: calculate(expression="2 + 3 * 4")
 2. Check server://status if something seems wrong
 3. Read data://schema/{name} to understand data structures
 """
+
+
+# =============================================================================
+# PATTERN 5: Hardcoded List Resource (List of Objects)
+# =============================================================================
+# Returns a hardcoded list of objects. Useful for static reference data,
+# configuration, or demo/testing purposes.
+
+
+class ProductDetail(BaseModel):
+    """
+    Product detail model.
+
+    Defines the structure of a product in the catalog.
+    """
+
+    product_id: str = Field(..., description="Unique product identifier")
+    name: str = Field(..., description="Product name")
+    description: str = Field(..., description="Product description")
+    price: float = Field(..., ge=0, description="Product price in USD")
+    category: str = Field(..., description="Product category")
+    in_stock: bool = Field(default=True, description="Whether product is in stock")
+    tags: list[str] = Field(default_factory=list, description="Product tags")
+
+
+# Hardcoded product data - replace with your actual data source
+PRODUCT_DETAILS: list[ProductDetail] = [
+    ProductDetail(
+        product_id="PROD-001",
+        name="Marketing Analytics Dashboard",
+        description="Real-time marketing analytics and reporting dashboard",
+        price=299.99,
+        category="Software",
+        in_stock=True,
+        tags=["analytics", "marketing", "dashboard"],
+    ),
+    ProductDetail(
+        product_id="PROD-002",
+        name="Customer Engagement Platform",
+        description="Multi-channel customer engagement and automation platform",
+        price=499.99,
+        category="Software",
+        in_stock=True,
+        tags=["engagement", "automation", "crm"],
+    ),
+    ProductDetail(
+        product_id="PROD-003",
+        name="Social Media Manager",
+        description="Comprehensive social media scheduling and management tool",
+        price=149.99,
+        category="Software",
+        in_stock=False,
+        tags=["social", "scheduling", "management"],
+    ),
+    ProductDetail(
+        product_id="PROD-004",
+        name="Email Campaign Builder",
+        description="Drag-and-drop email campaign creation and automation",
+        price=199.99,
+        category="Software",
+        in_stock=True,
+        tags=["email", "campaigns", "automation"],
+    ),
+]
+
+
+@mcp.resource("data://products/list")
+async def get_product_details_list() -> str:
+    """
+    Get the complete list of product details.
+
+    Returns a hardcoded list of all available products with their
+    full details including pricing, availability, and categorization.
+
+    This is a skeleton pattern for returning lists of objects.
+    Replace PRODUCT_DETAILS with your actual data source (database, API, etc.).
+    """
+    logger.info(f"Retrieving product details list ({len(PRODUCT_DETAILS)} products)")
+
+    # Convert Pydantic models to dicts for JSON serialization
+    products_data = [product.model_dump() for product in PRODUCT_DETAILS]
+
+    return json.dumps({
+        "products": products_data,
+        "count": len(products_data),
+        "timestamp": datetime.now(UTC).isoformat(),
+    }, indent=2)

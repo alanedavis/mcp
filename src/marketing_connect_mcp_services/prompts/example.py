@@ -19,7 +19,11 @@ PATTERNS SHOWN:
 3. Multi-step prompt - workflow guidance
 """
 
+import logging
+
 from marketing_connect_mcp_services.server import mcp
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================

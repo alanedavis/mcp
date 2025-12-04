@@ -35,9 +35,13 @@ MCP CONCEPTS:
 - PROMPTS: Reusable interaction templates
 """
 
+import logging
+
 from fastmcp import FastMCP
 
 from marketing_connect_mcp_services.config import settings
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # SERVER INITIALIZATION
@@ -69,14 +73,27 @@ def _register_components() -> None:
     - Called lazily when server starts
     - Easy to see what's registered
     """
+    logger.debug("Registering MCP components...")
+
     # Import tools - each module registers its tools on import
-    from marketing_connect_mcp_services.tools import example as _example_tools  # noqa: F401
+    from marketing_connect_mcp_services.tools import (
+        example as _example_tools,  # noqa: F401
+    )
+    logger.debug("Registered tools module: example")
 
     # Import resources
-    from marketing_connect_mcp_services.resources import example as _example_resources  # noqa: F401
+    from marketing_connect_mcp_services.resources import (
+        example as _example_resources,  # noqa: F401
+    )
+    logger.debug("Registered resources module: example")
 
     # Import prompts
-    from marketing_connect_mcp_services.prompts import example as _example_prompts  # noqa: F401
+    from marketing_connect_mcp_services.prompts import (
+        example as _example_prompts,  # noqa: F401
+    )
+    logger.debug("Registered prompts module: example")
+
+    logger.debug("MCP component registration complete")
 
     # Add your own modules here:
     # from marketing_connect_mcp_services.tools import database as _db_tools  # noqa: F401
