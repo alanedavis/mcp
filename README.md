@@ -61,7 +61,52 @@ curl http://localhost:8000/health
 
 # Get server info
 curl http://localhost:8000/info
+
+# Service overview
+curl http://localhost:8000/
 ```
+
+### Testing the MCP Protocol
+
+The MCP endpoint uses the Streamable HTTP transport and requires specific headers:
+
+```bash
+# Initialize MCP session
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {},
+      "clientInfo": {"name": "test-client", "version": "1.0"}
+    }
+  }'
+```
+
+Expected response (SSE format):
+```
+event: message
+data: {"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{...},"serverInfo":{"name":"marketing-connect-mcp-services","version":"..."}}}
+```
+
+```bash
+# List available tools
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }'
+```
+
+**Note:** The MCP protocol is stateful. The `initialize` request works without a session, but subsequent requests like `tools/list` and `tools/call` require a session ID header (`Mcp-Session-Id`) from the initialization response. For full protocol testing, use an MCP client library
 
 ## Project Structure
 
