@@ -23,7 +23,7 @@ ssap_bill_of_materials/
 requirements.txt
 
 # Generated Models (from OpenAPI spec via datamodel-codegen)
-models.tar.gz
+models.tgz
 src/marketing_connect_mcp_services/models/models.py
 .tmp/
 
