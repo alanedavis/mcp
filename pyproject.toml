@@ -75,7 +75,7 @@ packages = ["src/marketing_connect_mcp_services"]
 # Configure uv to use JPMC artifact repository
 # Set UV_INDEX_URL environment variable or use pyproject.toml config
 [tool.uv]
-index-url = "https://pypi.org/simple"
+index-url = "https://artifacts-read.gkp.jpmchase.net/artifactory/api/pypi/pypi/simple"
 
 # -----------------------------------------------------------------------------
 # PYTEST CONFIGURATION
