@@ -22,9 +22,10 @@ dist/
 ssap_bill_of_materials/
 requirements.txt
 
-# Generated Models (fetched from OpenAPI repo)
-src/marketing_connect_mcp_services/models/generated.py
+# Generated Models (from OpenAPI spec via datamodel-codegen)
 models.tar.gz
+src/marketing_connect_mcp_services/models/models.py
+.tmp/
 
 # Test Artifacts
 .coverage
