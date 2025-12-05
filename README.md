@@ -31,6 +31,47 @@ make ci-prebuild
 make build
 ```
 
+### Model Generation
+
+This server uses Pydantic models generated from an OpenAPI specification. The models are generated using `datamodel-code-generator`.
+
+#### From Local .tgz (npm-packed OpenAPI spec)
+
+```bash
+# Generate models from a local .tgz file
+make generate-models SPEC_TGZ=path/to/openapi-spec.tgz
+```
+
+#### From Artifactory URL
+
+```bash
+# Generate models from a URL (e.g., artifactory)
+make generate-models-url SPEC_URL=https://artifactory.example.com/openapi-spec.tgz
+```
+
+#### From Local YAML File
+
+```bash
+# Generate models directly from a local OpenAPI YAML file
+make generate-models-local SPEC_FILE=path/to/openapi.yaml
+```
+
+#### Model Management
+
+```bash
+# Show generated model classes
+make models-show
+
+# Clean generated models
+make models-clean
+```
+
+The generated models are placed in `src/marketing_connect_mcp_services/models/` and can be imported as:
+
+```python
+from marketing_connect_mcp_services.models import ProductDetails, GreetingResponse
+```
+
 ### Running the Server
 
 ```bash
@@ -180,7 +221,6 @@ The PyPI index is configured in `pyproject.toml`:
 ```toml
 [tool.uv]
 index-url = "https://artifacts-read.gkp.jpmchase.net/artifactory/api/pypi/pypi/simple"
-extra-index-url = ["https://pypi.org/simple"]
 ```
 
 You can also override via environment variable:
@@ -314,6 +354,11 @@ make package
 | `make lint` | Lint code |
 | `make typecheck` | Run mypy type checking |
 | `make check` | Run lint + typecheck + test |
+| `make generate-models` | Generate Pydantic models from .tgz |
+| `make generate-models-url` | Generate models from URL |
+| `make generate-models-local` | Generate models from local YAML |
+| `make models-show` | Show generated model classes |
+| `make models-clean` | Remove generated models |
 | `make lock` | Update uv.lock |
 | `make update` | Update all dependencies |
 | `make ci` | Full CI pipeline |

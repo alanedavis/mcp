@@ -118,48 +118,106 @@ check: lint typecheck test ## Run all checks (lint, typecheck, test)
 # =============================================================================
 # MODEL GENERATION (OpenAPI -> Pydantic)
 # =============================================================================
-# Models are generated from OpenAPI specs in the central OpenAPI repository
-# and packaged as a .tar.gz artifact
+# Generates Pydantic models from OpenAPI spec packaged as npm .tgz artifact
+#
+# Workflow:
+#   1. OpenAPI spec is npm-packed into a .tgz (from artifactory or local)
+#   2. This Makefile extracts the spec and runs datamodel-codegen
+#   3. Pydantic models are generated into src/.../models/
+#
+# Usage:
+#   make generate-models SPEC_TGZ=path/to/spec.tgz
+#   make generate-models-url SPEC_URL=https://artifactory.../spec.tgz
 
-# Path to local .tar.gz file (default: models.tar.gz in project root)
-MODELS_TGZ ?= models.tar.gz
+# Configuration
+SPEC_TGZ ?= openapi-spec.tgz
+SPEC_URL ?=
 MODELS_DIR := src/marketing_connect_mcp_services/models
+SPEC_EXTRACT_DIR := .tmp/openapi-spec
+SPEC_FILE_NAME ?= mcpservices-api.yml
 
-.PHONY: fetch-models
-fetch-models: ## Extract generated models from local .tar.gz file
-	@echo "Extracting models from $(MODELS_TGZ)..."
-	@if [ ! -f "$(MODELS_TGZ)" ]; then \
-		echo "Error: $(MODELS_TGZ) not found"; \
-		echo "Place the generated models .tar.gz file in the project root"; \
+# datamodel-codegen executable (installed via codegen extra)
+DATAMODEL_CODEGEN := $(UV) run datamodel-codegen
+
+.PHONY: generate-models
+generate-models: ## Generate Pydantic models from local OpenAPI spec .tgz
+	@echo "==> Generating models from $(SPEC_TGZ)..."
+	@if [ ! -f "$(SPEC_TGZ)" ]; then \
+		echo "Error: $(SPEC_TGZ) not found"; \
+		echo "Usage: make generate-models SPEC_TGZ=path/to/openapi-spec.tgz"; \
 		exit 1; \
 	fi
-	@mkdir -p $(MODELS_DIR)
-	@tar -xzf $(MODELS_TGZ) -C $(MODELS_DIR) --strip-components=1
-	@echo "Models extracted to $(MODELS_DIR)"
+	@mkdir -p $(SPEC_EXTRACT_DIR)
+	@echo "==> Extracting OpenAPI spec..."
+	@tar -xzf $(SPEC_TGZ) -C $(SPEC_EXTRACT_DIR)
+	@SPEC_PATH=$$(find $(SPEC_EXTRACT_DIR) -name "$(SPEC_FILE_NAME)" -o -name "*.yaml" -o -name "*.yml" | head -1); \
+	if [ -z "$$SPEC_PATH" ]; then \
+		echo "Error: No OpenAPI spec found in $(SPEC_TGZ)"; \
+		echo "Looking for: $(SPEC_FILE_NAME) or any .yaml/.yml file"; \
+		rm -rf $(SPEC_EXTRACT_DIR); \
+		exit 1; \
+	fi; \
+	echo "==> Found spec: $$SPEC_PATH"; \
+	echo "==> Running datamodel-codegen..."; \
+	mkdir -p $(MODELS_DIR); \
+	$(DATAMODEL_CODEGEN) \
+		--input "$$SPEC_PATH" \
+		--input-file-type openapi \
+		--output $(MODELS_DIR)/models.py \
+		--output-model-type pydantic_v2.BaseModel \
+		--use-schema-description \
+		--field-constraints \
+		--use-double-quotes \
+		--target-python-version 3.11; \
+	echo "# Generated models - do not edit manually" > $(MODELS_DIR)/__init__.py; \
+	echo "from .models import *" >> $(MODELS_DIR)/__init__.py
+	@rm -rf $(SPEC_EXTRACT_DIR)
+	@echo "==> Models generated: $(MODELS_DIR)/models.py"
 
-.PHONY: fetch-models-url
-fetch-models-url: ## Fetch models from URL (set MODELS_URL)
-	@if [ -z "$(MODELS_URL)" ]; then \
-		echo "Error: MODELS_URL not set"; \
-		echo "Usage: make fetch-models-url MODELS_URL=https://..."; \
+.PHONY: generate-models-url
+generate-models-url: ## Generate models from OpenAPI spec at URL (set SPEC_URL)
+	@if [ -z "$(SPEC_URL)" ]; then \
+		echo "Error: SPEC_URL not set"; \
+		echo "Usage: make generate-models-url SPEC_URL=https://artifactory.../openapi-spec.tgz"; \
 		exit 1; \
 	fi
-	@echo "Fetching models from $(MODELS_URL)..."
-	@curl -fsSL $(MODELS_URL) -o /tmp/mcp-models.tar.gz
+	@echo "==> Fetching spec from $(SPEC_URL)..."
+	@curl -fsSL "$(SPEC_URL)" -o /tmp/openapi-spec.tgz
+	@$(MAKE) generate-models SPEC_TGZ=/tmp/openapi-spec.tgz
+	@rm -f /tmp/openapi-spec.tgz
+
+.PHONY: generate-models-local
+generate-models-local: ## Generate models from local OpenAPI spec file (set SPEC_FILE)
+	@if [ -z "$(SPEC_FILE)" ]; then \
+		echo "Error: SPEC_FILE not set"; \
+		echo "Usage: make generate-models-local SPEC_FILE=path/to/openapi.yaml"; \
+		exit 1; \
+	fi
+	@echo "==> Generating models from $(SPEC_FILE)..."
 	@mkdir -p $(MODELS_DIR)
-	@tar -xzf /tmp/mcp-models.tar.gz -C $(MODELS_DIR) --strip-components=1
-	@rm /tmp/mcp-models.tar.gz
-	@echo "Models extracted to $(MODELS_DIR)"
+	$(DATAMODEL_CODEGEN) \
+		--input "$(SPEC_FILE)" \
+		--input-file-type openapi \
+		--output $(MODELS_DIR)/models.py \
+		--output-model-type pydantic_v2.BaseModel \
+		--use-schema-description \
+		--field-constraints \
+		--use-double-quotes \
+		--target-python-version 3.11
+	@echo "# Generated models - do not edit manually" > $(MODELS_DIR)/__init__.py
+	@echo "from .models import *" >> $(MODELS_DIR)/__init__.py
+	@echo "==> Models generated: $(MODELS_DIR)/models.py"
 
 .PHONY: models-clean
-models-clean: ## Remove generated models (keeps __init__.py)
+models-clean: ## Remove generated models
 	@echo "Cleaning generated models..."
-	@find $(MODELS_DIR) -name "*.py" ! -name "__init__.py" -delete 2>/dev/null || true
+	@rm -f $(MODELS_DIR)/models.py 2>/dev/null || true
 	@echo "Generated models removed"
 
-.PHONY: models-version
-models-version: ## Show current models version (if available)
-	@$(PYTHON) -c "from marketing_connect_mcp_services.models import __version__; print('Models version:', __version__)" 2>/dev/null || echo "Models not installed or no version defined"
+.PHONY: models-show
+models-show: ## Show generated model classes
+	@echo "Generated models in $(MODELS_DIR)/models.py:"
+	@grep "^class " $(MODELS_DIR)/models.py 2>/dev/null || echo "No models found"
 
 # =============================================================================
 # CI/CD & PACKAGING
@@ -197,10 +255,18 @@ help: ## Show make target documentation
 	}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "Quick Start:"
-	@echo "  make build    # Install dependencies"
-	@echo "  make run      # Start the server"
-	@echo "  make test     # Run tests"
+	@echo "  make build                    # Install dependencies"
+	@echo "  make run                      # Start the server"
+	@echo "  make test                     # Run tests"
+	@echo ""
+	@echo "Model Generation:"
+	@echo "  make generate-models SPEC_TGZ=spec.tgz        # From local .tgz"
+	@echo "  make generate-models-url SPEC_URL=https://... # From artifactory URL"
+	@echo "  make generate-models-local SPEC_FILE=api.yml  # From local YAML"
 	@echo ""
 	@echo "Environment Variables:"
-	@echo "  UV_INDEX_URL  # Override PyPI index (set in pyproject.toml)"
+	@echo "  UV_INDEX_URL   # Override PyPI index (set in pyproject.toml)"
+	@echo "  SPEC_TGZ       # Path to OpenAPI spec .tgz (default: openapi-spec.tgz)"
+	@echo "  SPEC_URL       # URL to fetch OpenAPI spec .tgz"
+	@echo "  SPEC_FILE_NAME # Name of spec file in .tgz (default: mcpservices-api.yml)"
 	@echo ""
