@@ -24,9 +24,8 @@ import json
 import logging
 from datetime import UTC, datetime
 
-from pydantic import BaseModel, Field
-
 from marketing_connect_mcp_services.config import settings
+from marketing_connect_mcp_services.models import ProductDetails
 from marketing_connect_mcp_services.server import mcp
 
 logger = logging.getLogger(__name__)
@@ -213,60 +212,49 @@ Example: calculate(expression="2 + 3 * 4")
 # =============================================================================
 # Returns a hardcoded list of objects. Useful for static reference data,
 # configuration, or demo/testing purposes.
-
-
-class ProductDetail(BaseModel):
-    """
-    Product detail model.
-
-    Defines the structure of a product in the catalog.
-    """
-
-    product_id: str = Field(..., description="Unique product identifier")
-    name: str = Field(..., description="Product name")
-    description: str = Field(..., description="Product description")
-    price: float = Field(..., ge=0, description="Product price in USD")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(default=True, description="Whether product is in stock")
-    tags: list[str] = Field(default_factory=list, description="Product tags")
+#
+# NOTE: ProductDetails is imported from marketing_connect_mcp_services.models
+# which is generated from OpenAPI schemas. Run 'make fetch-models' to update.
 
 
 # Hardcoded product data - replace with your actual data source
-PRODUCT_DETAILS: list[ProductDetail] = [
-    ProductDetail(
-        product_id="PROD-001",
+# Uses ProductDetails model from generated OpenAPI schemas
+# Field names use camelCase to match OpenAPI/JSON conventions
+PRODUCT_DETAILS_LIST: list[ProductDetails] = [
+    ProductDetails(
+        productId="PROD-001",
         name="Marketing Analytics Dashboard",
         description="Real-time marketing analytics and reporting dashboard",
         price=299.99,
         category="Software",
-        in_stock=True,
+        inStock=True,
         tags=["analytics", "marketing", "dashboard"],
     ),
-    ProductDetail(
-        product_id="PROD-002",
+    ProductDetails(
+        productId="PROD-002",
         name="Customer Engagement Platform",
         description="Multi-channel customer engagement and automation platform",
         price=499.99,
         category="Software",
-        in_stock=True,
+        inStock=True,
         tags=["engagement", "automation", "crm"],
     ),
-    ProductDetail(
-        product_id="PROD-003",
+    ProductDetails(
+        productId="PROD-003",
         name="Social Media Manager",
         description="Comprehensive social media scheduling and management tool",
         price=149.99,
         category="Software",
-        in_stock=False,
+        inStock=False,
         tags=["social", "scheduling", "management"],
     ),
-    ProductDetail(
-        product_id="PROD-004",
+    ProductDetails(
+        productId="PROD-004",
         name="Email Campaign Builder",
         description="Drag-and-drop email campaign creation and automation",
         price=199.99,
         category="Software",
-        in_stock=True,
+        inStock=True,
         tags=["email", "campaigns", "automation"],
     ),
 ]
@@ -281,12 +269,12 @@ async def get_product_details_list() -> str:
     full details including pricing, availability, and categorization.
 
     This is a skeleton pattern for returning lists of objects.
-    Replace PRODUCT_DETAILS with your actual data source (database, API, etc.).
+    Replace PRODUCT_DETAILS_LIST with your actual data source (database, API, etc.).
     """
-    logger.info(f"Retrieving product details list ({len(PRODUCT_DETAILS)} products)")
+    logger.info(f"Retrieving product details list ({len(PRODUCT_DETAILS_LIST)} products)")
 
     # Convert Pydantic models to dicts for JSON serialization
-    products_data = [product.model_dump() for product in PRODUCT_DETAILS]
+    products_data = [product.model_dump(by_alias=True) for product in PRODUCT_DETAILS_LIST]
 
     return json.dumps({
         "products": products_data,

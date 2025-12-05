@@ -116,6 +116,52 @@ typecheck: ## Run type checking with mypy
 check: lint typecheck test ## Run all checks (lint, typecheck, test)
 
 # =============================================================================
+# MODEL GENERATION (OpenAPI -> Pydantic)
+# =============================================================================
+# Models are generated from OpenAPI specs in the central OpenAPI repository
+# and packaged as a .tar.gz artifact
+
+# Path to local .tar.gz file (default: models.tar.gz in project root)
+MODELS_TGZ ?= models.tar.gz
+MODELS_DIR := src/marketing_connect_mcp_services/models
+
+.PHONY: fetch-models
+fetch-models: ## Extract generated models from local .tar.gz file
+	@echo "Extracting models from $(MODELS_TGZ)..."
+	@if [ ! -f "$(MODELS_TGZ)" ]; then \
+		echo "Error: $(MODELS_TGZ) not found"; \
+		echo "Place the generated models .tar.gz file in the project root"; \
+		exit 1; \
+	fi
+	@mkdir -p $(MODELS_DIR)
+	@tar -xzf $(MODELS_TGZ) -C $(MODELS_DIR) --strip-components=1
+	@echo "Models extracted to $(MODELS_DIR)"
+
+.PHONY: fetch-models-url
+fetch-models-url: ## Fetch models from URL (set MODELS_URL)
+	@if [ -z "$(MODELS_URL)" ]; then \
+		echo "Error: MODELS_URL not set"; \
+		echo "Usage: make fetch-models-url MODELS_URL=https://..."; \
+		exit 1; \
+	fi
+	@echo "Fetching models from $(MODELS_URL)..."
+	@curl -fsSL $(MODELS_URL) -o /tmp/mcp-models.tar.gz
+	@mkdir -p $(MODELS_DIR)
+	@tar -xzf /tmp/mcp-models.tar.gz -C $(MODELS_DIR) --strip-components=1
+	@rm /tmp/mcp-models.tar.gz
+	@echo "Models extracted to $(MODELS_DIR)"
+
+.PHONY: models-clean
+models-clean: ## Remove generated models (keeps __init__.py)
+	@echo "Cleaning generated models..."
+	@find $(MODELS_DIR) -name "*.py" ! -name "__init__.py" -delete 2>/dev/null || true
+	@echo "Generated models removed"
+
+.PHONY: models-version
+models-version: ## Show current models version (if available)
+	@$(PYTHON) -c "from marketing_connect_mcp_services.models import __version__; print('Models version:', __version__)" 2>/dev/null || echo "Models not installed or no version defined"
+
+# =============================================================================
 # CI/CD & PACKAGING
 # =============================================================================
 

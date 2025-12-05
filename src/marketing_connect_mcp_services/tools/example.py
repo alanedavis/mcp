@@ -26,8 +26,7 @@ import json
 import logging
 from typing import Any
 
-from pydantic import BaseModel, Field
-
+from marketing_connect_mcp_services.models import UserDetails
 from marketing_connect_mcp_services.server import mcp
 
 logger = logging.getLogger(__name__)
@@ -244,41 +243,24 @@ async def calculate(expression: str) -> str:
 # =============================================================================
 # Use Pydantic models for complex, validated input objects.
 # This provides schema validation and clear documentation for the AI.
-
-
-class Employee(BaseModel):
-    """
-    Employee data model.
-
-    This model defines the structure of an employee object
-    that can be passed to tools.
-    """
-
-    user_sid: str = Field(
-        ...,
-        description="The unique security identifier (SID) for the user",
-        examples=["S-1-5-21-123456789"],
-    )
-    name: str = Field(
-        ...,
-        description="The employee's full name",
-        examples=["John Doe"],
-    )
+#
+# NOTE: UserDetails is imported from marketing_connect_mcp_services.models
+# which is generated from OpenAPI schemas. Run 'make fetch-models' to update.
 
 
 @mcp.tool()
-async def greet_employee(employee: Employee) -> str:
+async def greet_user(user: UserDetails) -> str:
     """
-    Greet an employee with their name and user SID.
+    Greet a user with their name and user SID.
 
-    Demonstrates using a Pydantic model as input for structured data.
+    Demonstrates using a Pydantic model (generated from OpenAPI) as input.
     The AI will see the schema and provide properly structured input.
 
     Args:
-        employee: An Employee object containing user_sid and name
+        user: A UserDetails object containing userSid and name
 
     Returns:
-        A greeting message with the employee's details
+        A greeting message with the user's details
     """
-    logger.info(f"Greeting employee: {employee.name} ({employee.user_sid})")
-    return f"Hello {employee.name} ({employee.user_sid})"
+    logger.info(f"Greeting user: {user.name} ({user.userSid})")
+    return f"Hello {user.name} ({user.userSid})"
