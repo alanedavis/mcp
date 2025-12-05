@@ -1,0 +1,46 @@
+meta {
+  name: 5. Call greet_employee
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/mcp
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json, text/event-stream
+  Mcp-Session-Id: {{sessionId}}
+}
+
+body:json {
+  {
+    "jsonrpc": "2.0",
+    "id": 4,
+    "method": "tools/call",
+    "params": {
+      "name": "greet_employee",
+      "arguments": {
+        "user_id": "R741020",
+        "user_name": "Alan Davis"
+      }
+    }
+  }
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:8000
+}
+
+docs {
+  Call the greet_employee tool.
+
+  Parameters:
+  - user_id: Employee ID (e.g., "R741020")
+  - user_name: Employee name (e.g., "Alan Davis")
+
+  Requires valid sessionId from Initialize.
+}

@@ -1,0 +1,40 @@
+meta {
+  name: 6. Read Product List Resource
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/mcp
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json, text/event-stream
+  Mcp-Session-Id: {{sessionId}}
+}
+
+body:json {
+  {
+    "jsonrpc": "2.0",
+    "id": 5,
+    "method": "resources/read",
+    "params": {
+      "uri": "data://products/list"
+    }
+  }
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:8000
+}
+
+docs {
+  Read the product details list resource.
+
+  Returns all products with their details.
+
+  Requires valid sessionId from Initialize.
+}

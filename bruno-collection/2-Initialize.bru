@@ -1,0 +1,46 @@
+meta {
+  name: 2. Initialize (RUN FIRST)
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/mcp
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json, text/event-stream
+}
+
+body:json {
+  {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {},
+      "clientInfo": {
+        "name": "bruno-test-client",
+        "version": "1.0.0"
+      }
+    }
+  }
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:8000
+}
+
+docs {
+  Initialize the MCP session.
+
+  IMPORTANT: After running this:
+  1. Check the response headers for 'mcp-session-id'
+  2. Copy that value
+  3. Go to Environments > Local and set sessionId
+  4. All subsequent MCP requests require this session ID
+}
