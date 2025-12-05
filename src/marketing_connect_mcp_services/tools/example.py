@@ -26,7 +26,10 @@ import json
 import logging
 from typing import Any
 
-from marketing_connect_mcp_services.models import UserDetails
+from marketing_connect_mcp_services.models import (
+    GreetingResponse,
+    UserDetails,
+)
 from marketing_connect_mcp_services.server import mcp
 
 logger = logging.getLogger(__name__)
@@ -264,3 +267,26 @@ async def greet_user(user: UserDetails) -> str:
     """
     logger.info(f"Greeting user: {user.name} ({user.userSid})")
     return f"Hello {user.name} ({user.userSid})"
+
+
+# =============================================================================
+# MARKETING CONNECT TOOLS
+# =============================================================================
+# These tools use the generated Pydantic models from OpenAPI
+
+
+@mcp.tool()
+async def greet_employee(user_id: str, user_name: str) -> str:
+    """
+    Greet an employee with a personalized message.
+
+    Args:
+        user_id: The employee's user ID (e.g., "R741020")
+        user_name: The employee's full name (e.g., "Alan Davis")
+
+    Returns:
+        JSON response with a greeting message
+    """
+    logger.info(f"Greeting employee: {user_name} ({user_id})")
+    response = GreetingResponse(message=f"Hello {user_name} ({user_id})!")
+    return response.model_dump_json()

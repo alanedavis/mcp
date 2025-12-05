@@ -214,48 +214,43 @@ Example: calculate(expression="2 + 3 * 4")
 # configuration, or demo/testing purposes.
 #
 # NOTE: ProductDetails is imported from marketing_connect_mcp_services.models
-# which is generated from OpenAPI schemas. Run 'make fetch-models' to update.
+# which is generated from OpenAPI schemas. Run 'make generate-models' to update.
 
 
 # Hardcoded product data - replace with your actual data source
 # Uses ProductDetails model from generated OpenAPI schemas
-# Field names use camelCase to match OpenAPI/JSON conventions
 PRODUCT_DETAILS_LIST: list[ProductDetails] = [
     ProductDetails(
-        productId="PROD-001",
-        name="Marketing Analytics Dashboard",
-        description="Real-time marketing analytics and reporting dashboard",
-        price=299.99,
-        category="Software",
-        inStock=True,
-        tags=["analytics", "marketing", "dashboard"],
+        productId=1001,
+        productCode="MKT-001",
+        subProductCode="MKT-001-A",
+        productName="Marketing Analytics Suite",
+        productLifecycleStatusCode="ACTIVE",
+        productCustomerTypeName="COMMERCIAL",
     ),
     ProductDetails(
-        productId="PROD-002",
-        name="Customer Engagement Platform",
-        description="Multi-channel customer engagement and automation platform",
-        price=499.99,
-        category="Software",
-        inStock=True,
-        tags=["engagement", "automation", "crm"],
+        productId=1002,
+        productCode="MKT-002",
+        subProductCode="MKT-002-A",
+        productName="Campaign Manager",
+        productLifecycleStatusCode="ACTIVE",
+        productCustomerTypeName="RETAIL",
     ),
     ProductDetails(
-        productId="PROD-003",
-        name="Social Media Manager",
-        description="Comprehensive social media scheduling and management tool",
-        price=149.99,
-        category="Software",
-        inStock=False,
-        tags=["social", "scheduling", "management"],
+        productId=1003,
+        productCode="MKT-003",
+        subProductCode="MKT-003-A",
+        productName="Customer Insights Dashboard",
+        productLifecycleStatusCode="DEPRECATED",
+        productCustomerTypeName="COMMERCIAL",
     ),
     ProductDetails(
-        productId="PROD-004",
-        name="Email Campaign Builder",
-        description="Drag-and-drop email campaign creation and automation",
-        price=199.99,
-        category="Software",
-        inStock=True,
-        tags=["email", "campaigns", "automation"],
+        productId=1004,
+        productCode="MKT-004",
+        subProductCode="MKT-004-A",
+        productName="Email Campaign Builder",
+        productLifecycleStatusCode="ACTIVE",
+        productCustomerTypeName="RETAIL",
     ),
 ]
 
@@ -266,7 +261,7 @@ async def get_product_details_list() -> str:
     Get the complete list of product details.
 
     Returns a hardcoded list of all available products with their
-    full details including pricing, availability, and categorization.
+    full details including product codes, lifecycle status, and customer types.
 
     This is a skeleton pattern for returning lists of objects.
     Replace PRODUCT_DETAILS_LIST with your actual data source (database, API, etc.).
