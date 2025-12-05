@@ -4,11 +4,79 @@ A Model Context Protocol (MCP) server for Marketing Connect AI integrations.
 
 ## What is MCP?
 
-The Model Context Protocol (MCP) is an open standard from Anthropic that enables AI models to securely interact with external tools and data sources. This server exposes:
+The [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) is an open standard from Anthropic that enables AI models to securely interact with external tools and data sources. This server exposes:
 
 - **Tools**: Functions the AI can invoke (like API endpoints)
 - **Resources**: Data loaded into AI context (like configuration or schemas)
 - **Prompts**: Reusable interaction templates
+
+## What is FastMCP?
+
+[FastMCP](https://gofastmcp.com/getting-started/welcome) is a high-level Python framework that simplifies building MCP servers. It provides a decorator-based API similar to FastAPI, reducing boilerplate and accelerating development.
+
+### Why Use FastMCP?
+
+| Benefit | Description |
+|---------|-------------|
+| **Minimal Boilerplate** | Simple decorators like `@mcp.tool()` replace complex class hierarchies |
+| **Automatic Schema Generation** | Input/output schemas generated from Python type hints |
+| **Built-in HTTP Transport** | Production-ready server with health checks and SSE support |
+| **Pydantic Integration** | Native support for Pydantic models as tool inputs |
+
+### MCP SDK vs FastMCP Comparison
+
+**Without FastMCP** (using low-level MCP SDK):
+
+```python
+from mcp.server import Server
+from mcp.types import Tool, TextContent
+import mcp.server.stdio
+
+server = Server("my-server")
+
+@server.list_tools()
+async def list_tools():
+    return [
+        Tool(
+            name="greet",
+            description="Greet a user",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "description": "User name"}
+                },
+                "required": ["name"]
+            }
+        )
+    ]
+
+@server.call_tool()
+async def call_tool(name: str, arguments: dict):
+    if name == "greet":
+        return [TextContent(type="text", text=f"Hello {arguments['name']}!")]
+
+async def main():
+    async with mcp.server.stdio.stdio_server() as (read, write):
+        await server.run(read, write, server.create_initialization_options())
+```
+
+**With FastMCP**:
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP("my-server")
+
+@mcp.tool()
+async def greet(name: str) -> str:
+    """Greet a user."""
+    return f"Hello {name}!"
+
+if __name__ == "__main__":
+    mcp.run()
+```
+
+FastMCP reduces ~30 lines to ~10 while maintaining full MCP protocol compliance.
 
 ## Quick Start
 
@@ -38,8 +106,12 @@ This server uses Pydantic models generated from an OpenAPI specification. The mo
 #### From Local .tgz (npm-packed OpenAPI spec)
 
 ```bash
+# Command to be run in marketing-connect-spec/marketing-connect-mcp-services (in terminal)
+  # Inside path src/main/resources/model/api dir
+tar -czvf models.tgz mcpservices.api.yml schema/
+
 # Generate models from a local .tgz file
-make generate-models SPEC_TGZ=path/to/openapi-spec.tgz
+make generate-models SPEC_TGZ=path/to/models.tgz
 ```
 
 #### From Artifactory URL
